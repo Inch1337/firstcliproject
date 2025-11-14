@@ -9,6 +9,7 @@ import (
 
 func main() {
 	var pokupki []string
+
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("\nСписок покупок.\nКоманды: Добавить, Изменить, Удалить, Список, Команды, Стоп")
 
@@ -44,7 +45,7 @@ func main() {
 }
 
 func addItem(pokupki []string, scanner *bufio.Scanner) []string {
-	fmt.Print("\nЧто добавить?\nсли не хотите ничего добавлять напишите 'назад")
+	fmt.Print("\nЧто добавить?\nЕсли не хотите ничего добавлять напишите 'назад'")
 	maxAttempts := 3
 	for attempts := maxAttempts; attempts > 0; attempts-- {
 		fmt.Print("\n> ")
