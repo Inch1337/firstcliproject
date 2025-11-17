@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -97,10 +98,12 @@ func changeItem(pokupki []Item) []Item {
 
 	showList(pokupki)
 	fmt.Println("Какой пункт вы хотите изменить?")
+	fmt.Print("> ")
 
 	var id int
 	if _, err := fmt.Scanln(&id); err != nil {
 		fmt.Println("Ошибка ввода")
+		return pokupki
 	}
 
 	index := findIndexByID(pokupki, id)
@@ -153,6 +156,10 @@ func deleteItem(pokupki []Item) []Item {
 
 	pokupki = append(pokupki[:index], pokupki[index+1:]...)
 
+	for i := range pokupki {
+		pokupki[i].ID = i + 1
+	}
+
 	fmt.Printf("Вы удалили %s\n", removedItem.Name)
 	return pokupki
 
@@ -188,39 +195,36 @@ func toggleItem(pokupki []Item) []Item {
 	}
 
 	showList(pokupki)
-	for {
-		fmt.Println("Ввведите номер элемента который хотите отметить/снять метку.")
+	fmt.Println("\nВвведите номер элемента который хотите отметить/снять метку.\nЧтобы вернутся назад напишите'назад'")
 
-		var id int
-		if _, err := fmt.Scanln(&id); err != nil {
-			fmt.Println("Ошибка ввода")
-			return pokupki
-		}
+	var idtest string
+	fmt.Print("> ")
 
-		index := findIndexByID(pokupki, id)
-
-		if index == -1 {
-			fmt.Println("Такого элемента не существует")
-			return pokupki
-		}
-
-		pokupki[index].Done = !pokupki[index].Done
-
-		if pokupki[index].Done {
-			fmt.Printf("'%s' отмечено как выполнено \n", pokupki[index].Name)
-		} else {
-			fmt.Printf("\nОтметка снята с '%s' \n", pokupki[index].Name)
-		}
-
-		fmt.Println("Если хотите перестать напишите 'назад', чтобы продолжить отмечать нажмите Enter")
-
-		var back string
-		if _, err := fmt.Scanln(&back); err != nil {
-			fmt.Println("Ошибка ввода")
-			return pokupki
-		}
-		if strings.ToLower(strings.TrimSpace(back)) == "назад" {
-			return pokupki
-		}
+	if _, err := fmt.Scanln(&idtest); err != nil {
+		fmt.Println("Ошибка ввода, возврат в меню")
+		return pokupki
 	}
+
+	if strings.ToLower(strings.TrimSpace(idtest)) == "назад" {
+		fmt.Println("Возврат в меню")
+		return pokupki
+	}
+
+	id, _ := strconv.Atoi(idtest)
+
+	index := findIndexByID(pokupki, id)
+
+	if index == -1 {
+		fmt.Println("Такого элемента не существует, возврат в меню")
+		return pokupki
+	}
+
+	pokupki[index].Done = !pokupki[index].Done
+
+	if pokupki[index].Done {
+		fmt.Printf("'%s' отмечено как выполнено \n", pokupki[index].Name)
+	} else {
+		fmt.Printf("\nОтметка снята с '%s' \n", pokupki[index].Name)
+	}
+	return pokupki
 }
