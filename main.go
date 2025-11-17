@@ -19,7 +19,7 @@ var scanner = bufio.NewScanner(os.Stdin)
 func main() {
 	var pokupki []Item
 
-	fmt.Println("\nСписок покупок.\nКоманды: Добавить, Изменить, Удалить, Список, Команды, Стоп")
+	fmt.Println("\nСписок покупок.\nКоманды: Добавить, Изменить, Удалить, Список, Отметить, Команды, Стоп")
 
 	for {
 		fmt.Print("> ")
@@ -39,12 +39,15 @@ func main() {
 		case "список":
 			showList(pokupki)
 
+		case "отметить":
+			pokupki = toggleItem(pokupki)
+
 		case "стоп":
 			fmt.Println("\nЗавершение программы")
 			return
 
 		case "команды":
-			fmt.Println("\nКоманды: Добавить, Изменить, Удалить, Список, Команды, Стоп")
+			fmt.Println("\nКоманды: Добавить, Изменить, Удалить, Список, Отметить, Команды, Стоп")
 		default:
 			fmt.Println("\nНеизвестная команда. Введите 'Команды' чтобы увидеть список доступных.")
 		}
@@ -161,7 +164,11 @@ func showList(pokupki []Item) {
 	}
 	fmt.Println("\nВаш список продуктов:")
 	for _, item := range pokupki {
-		fmt.Printf("%d. %s\n", item.ID, item.Name)
+		check := "[ ]"
+		if item.Done {
+			check = "[x]"
+		}
+		fmt.Printf("%d. %s %s\n", item.ID, item.Name, check)
 	}
 }
 
@@ -172,4 +179,48 @@ func findIndexByID(items []Item, id int) int {
 		}
 	}
 	return -1
+}
+
+func toggleItem(pokupki []Item) []Item {
+	if len(pokupki) == 0 {
+		fmt.Println("Список пуст.")
+		return pokupki
+	}
+
+	showList(pokupki)
+	for {
+		fmt.Println("Ввведите номер элемента который хотите отметить/снять метку.")
+
+		var id int
+		if _, err := fmt.Scanln(&id); err != nil {
+			fmt.Println("Ошибка ввода")
+			return pokupki
+		}
+
+		index := findIndexByID(pokupki, id)
+
+		if index == -1 {
+			fmt.Println("Такого элемента не существует")
+			return pokupki
+		}
+
+		pokupki[index].Done = !pokupki[index].Done
+
+		if pokupki[index].Done {
+			fmt.Printf("'%s' отмечено как выполнено \n", pokupki[index].Name)
+		} else {
+			fmt.Printf("\nОтметка снята с '%s' \n", pokupki[index].Name)
+		}
+
+		fmt.Println("Если хотите перестать напишите 'назад', чтобы продолжить отмечать нажмите Enter")
+
+		var back string
+		if _, err := fmt.Scanln(&back); err != nil {
+			fmt.Println("Ошибка ввода")
+			return pokupki
+		}
+		if strings.ToLower(strings.TrimSpace(back)) == "назад" {
+			return pokupki
+		}
+	}
 }
