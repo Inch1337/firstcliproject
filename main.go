@@ -7,10 +7,18 @@ import (
 	"strings"
 )
 
-func main() {
-	var pokupki []string
+type Item struct {
+	ID   int
+	Name string
+	Done bool
+}
 
-	scanner := bufio.NewScanner(os.Stdin)
+var nextID = 1
+var scanner = bufio.NewScanner(os.Stdin)
+
+func main() {
+	var pokupki []Item
+
 	fmt.Println("\nСписок покупок.\nКоманды: Добавить, Изменить, Удалить, Список, Команды, Стоп")
 
 	for {
@@ -20,10 +28,10 @@ func main() {
 
 		switch command {
 		case "добавить":
-			pokupki = addItem(pokupki, scanner)
+			pokupki = addItem(pokupki)
 
 		case "изменить":
-			pokupki = changeItem(pokupki, scanner)
+			pokupki = changeItem(pokupki)
 
 		case "удалить":
 			pokupki = deleteItem(pokupki)
@@ -44,60 +52,80 @@ func main() {
 
 }
 
-func addItem(pokupki []string, scanner *bufio.Scanner) []string {
+func addItem(pokupki []Item) []Item {
 	fmt.Print("\nЧто добавить?\nЕсли не хотите ничего добавлять напишите 'назад'")
 	maxAttempts := 3
 	for attempts := maxAttempts; attempts > 0; attempts-- {
 		fmt.Print("\n> ")
 
 		scanner.Scan()
-		item := strings.TrimSpace(scanner.Text())
+		name := strings.ToLower(strings.TrimSpace(scanner.Text()))
 
-		if strings.ToLower(item) == "назад" {
+		if name == "назад" {
 			fmt.Println("Возврат в меню")
 			return pokupki
 		}
-		if item == "" {
+		if name == "" {
 			fmt.Printf("\nПустой ввод. Ничего не добавлено, осталось попыток: %d.\nЕсли не хотите ничего добавлять напишите 'назад'", attempts-1)
 			continue
 		}
-		pokupki = append(pokupki, item)
-		fmt.Printf("\nДобавлено: %s\n\n", item)
+
+		newItem := Item{
+			ID:   nextID,
+			Name: name,
+			Done: false,
+		}
+
+		nextID++
+
+		pokupki = append(pokupki, newItem)
+		fmt.Printf("\nДобавлено: %s (ID: %d)\n\n", newItem.Name, newItem.ID)
 		return pokupki
 	}
 	fmt.Println("Превышено количестов попыток. Возврат в меню")
 	return pokupki
 }
 
-func changeItem(pokupki []string, scanner *bufio.Scanner) []string {
+func changeItem(pokupki []Item) []Item {
 	if len(pokupki) == 0 {
 		fmt.Println("Список пуст.")
 		return pokupki
 	}
+
 	showList(pokupki)
 	fmt.Println("Какой пункт вы хотите изменить?")
 
-	index, ok := inputIndex(len(pokupki))
+	var id int
+	if _, err := fmt.Scanln(&id); err != nil {
+		fmt.Println("Ошибка ввода")
+	}
 
-	if !ok {
-		fmt.Println("Превышено количество попыток. Возврат в меню.")
+	index := findIndexByID(pokupki, id)
+	if index == -1 {
+		fmt.Println("Такого элемента не существует")
 		return pokupki
 	}
 
 	fmt.Println("На что хотите заменить?")
-
 	fmt.Print("> ")
-	scanner.Scan()
-	newItem := strings.TrimSpace(scanner.Text())
 
-	oldItem := pokupki[index-1]
-	pokupki[index-1] = newItem
-	fmt.Printf("\nЭлемент изменен.\nВы заменили '%s', на '%s'.\n", oldItem, newItem)
+	scanner.Scan()
+	newName := strings.TrimSpace(scanner.Text())
+
+	if newName == "" {
+		fmt.Println("Пустой ввод. Изменение отменено")
+		return pokupki
+	}
+
+	oldName := pokupki[index].Name
+	pokupki[index].Name = newName
+
+	fmt.Printf("\nЭлемент изменен.\nВы заменили '%s', на '%s'.\n", oldName, newName)
 
 	return pokupki
 }
 
-func deleteItem(pokupki []string) []string {
+func deleteItem(pokupki []Item) []Item {
 	if len(pokupki) == 0 {
 		fmt.Println("Список пуст")
 		return pokupki
@@ -106,43 +134,42 @@ func deleteItem(pokupki []string) []string {
 	showList(pokupki)
 	fmt.Println("Какой элемент вы хотите удалить")
 
-	index, ok := inputIndex(len(pokupki))
-
-	if !ok {
-		fmt.Println("Количество попыток превышено. Возврат в меню")
+	var id int
+	if _, err := fmt.Scanln(&id); err != nil {
+		fmt.Println("Ошибка ввода.")
 		return pokupki
 	}
 
-	removedItem := pokupki[index-1]
-	pokupki = append(pokupki[:index-1], pokupki[index:]...)
+	index := findIndexByID(pokupki, id)
+	if index == -1 {
+		fmt.Println("Такого элемента не существует")
+		return pokupki
+	}
 
-	fmt.Printf("Вы удалили %s\n", removedItem)
+	removedItem := pokupki[index]
+
+	pokupki = append(pokupki[:index], pokupki[index+1:]...)
+
+	fmt.Printf("Вы удалили %s\n", removedItem.Name)
 	return pokupki
 
 }
-func showList(pokupki []string) {
+func showList(pokupki []Item) {
 	if len(pokupki) == 0 {
 		fmt.Println("Список пуст, сначала добавьте что-нибудь")
 		return
 	}
 	fmt.Println("\nВаш список продуктов:")
-	for i, value := range pokupki {
-		fmt.Printf("%d. %s\n", i+1, value)
+	for _, item := range pokupki {
+		fmt.Printf("%d. %s\n", item.ID, item.Name)
 	}
 }
 
-func inputIndex(limit int) (int, bool) {
-	var index int
-
-	maxAttempts := 3
-
-	for attempts := maxAttempts; attempts > 0; attempts-- {
-		fmt.Print("> ")
-		if _, err := fmt.Scanln(&index); err != nil || index <= 0 || index > limit {
-			fmt.Printf("Неккоректный номер, попробуйте снова, осталось попыток: %d\n", attempts-1)
-			continue
+func findIndexByID(items []Item, id int) int {
+	for i := range items {
+		if items[i].ID == id {
+			return i
 		}
-		return index, true
 	}
-	return 0, false
+	return -1
 }
