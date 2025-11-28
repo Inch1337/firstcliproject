@@ -200,7 +200,7 @@ func toggleItem(pokupki []Item) []Item {
 	var idtest string
 	fmt.Print("> ")
 
-	if _, err := fmt.Scanln(&idtest); err != nil {
+	if _, err := fmt.Scan(&idtest); err != nil {
 		fmt.Println("Ошибка ввода, возврат в меню")
 		return pokupki
 	}
